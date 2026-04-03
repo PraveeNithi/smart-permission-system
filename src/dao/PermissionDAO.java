@@ -9,7 +9,7 @@ import java.util.List;
 
 public class PermissionDAO {
 
-    public void insertRequest(PermissionRequest request) {
+    public boolean insertRequest(PermissionRequest request) {
         String sql = "INSERT INTO permission_requests (employee_id, employee_name, reason, request_date, " +
                      "number_of_days, leave_type, past_leave_count, status, decision_reason) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -27,9 +27,11 @@ public class PermissionDAO {
             pstmt.setString(8, request.getStatus());
             pstmt.setString(9, request.getDecisionReason());
             
-            pstmt.executeUpdate();
+            int affectedRows = pstmt.executeUpdate();
+            return affectedRows > 0;
         } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
+            return false;
         }
     }
 

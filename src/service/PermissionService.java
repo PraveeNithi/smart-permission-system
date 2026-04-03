@@ -20,7 +20,10 @@ public class PermissionService {
         ruleEngine.evaluateRequest(request);
         
         // Store the request
-        permissionDAO.insertRequest(request);
+        boolean success = permissionDAO.insertRequest(request);
+        if (!success) {
+            throw new RuntimeException("Failed to save the request to the database. See logs for details.");
+        }
         return request;
     }
 

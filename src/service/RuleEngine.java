@@ -12,11 +12,23 @@ public class RuleEngine {
         // Check for Medical leave
         if ("Medical".equalsIgnoreCase(request.getLeaveType())) {
             request.setStatus("APPROVED");
-            request.setDecisionReason("Medical leave is always approved.");
+            request.setDecisionReason("Medical leave is generally approved.");
+            return;
+        }
+
+        // Check for Emergency leave
+        if ("Emergency".equalsIgnoreCase(request.getLeaveType())) {
+            if (request.getNumberOfDays() > 3) {
+                request.setStatus("REVIEW");
+                request.setDecisionReason("Emergency leave > 3 days requires review.");
+            } else {
+                request.setStatus("APPROVED");
+                request.setDecisionReason("Emergency leave <= 3 days is approved.");
+            }
             return;
         }
         
-        // Check past leave count
+        // Casual Leave Checks
         if (request.getPastLeaveCount() > 10) {
             request.setStatus("REJECTED");
             request.setDecisionReason("Past leave count exceeds limit (10).");
@@ -29,20 +41,17 @@ public class RuleEngine {
             return;
         }
 
-        // Check number of days
-        if (request.getNumberOfDays() <= 1) {
+        // Check number of days for Casual
+        if (request.getNumberOfDays() <= 2) {
             request.setStatus("APPROVED");
-            request.setDecisionReason("Leave for 1 day or less is approved.");
-            return;
-        } else if (request.getNumberOfDays() > 3) {
+            request.setDecisionReason("Casual leave for 2 days or less is approved.");
+        } else if (request.getNumberOfDays() == 3) {
             request.setStatus("REVIEW");
-            request.setDecisionReason("Leave for more than 3 days requires review.");
-            return;
+            request.setDecisionReason("Casual leave for exactly 3 days requires review.");
+        } else {
+            request.setStatus("REJECTED");
+            request.setDecisionReason("Casual leave for more than 3 days is rejected.");
         }
-
-        // Otherwise -> REVIEW
-        request.setStatus("REVIEW");
-        request.setDecisionReason("Request falls under general review policy.");
     }
 
     private boolean isWeekend(Date date) {
