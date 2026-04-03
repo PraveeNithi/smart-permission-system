@@ -1,0 +1,17 @@
+# Compiled class files
+bin/
+*.class
+
+# Log files
+*.log
+
+# Windows thumbnail cache files
+Thumbs.db
+
+# Database file
+*.db
+
+# Temporary and metadata directories
+.idea/
+.vscode/
+.eclipse/
