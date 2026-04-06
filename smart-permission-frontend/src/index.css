@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+@theme {
+  --color-sand-50: #fdfbf7;
+  --color-sand-100: #f5f2ed;
+  --color-sand-200: #e6dfd9;
+  
+  --color-brown-500: #8c6b5d;
+  --color-brown-600: #705348;
+  --color-brown-800: #4a352e;
+  --color-brown-900: #33231e;
+}
+
+@layer base {
+  body {
+    @apply bg-sand-50 text-brown-900 font-sans antialiased min-h-screen;
+  }
+}

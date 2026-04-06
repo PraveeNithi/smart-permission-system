@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Smart Permission System</title>
+    <!-- Tailwind CSS (Zero Install via CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0',
+                            500: '#6366f1', 600: '#4f46e5', 800: '#3730a3', 900: '#0f172a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- React & ReactDOM (Zero Install via CDN) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Babel JSX Compiler (Zero Install via CDN) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body { background-color: #f8fafc; color: #0f172a; font-family: ui-sans-serif, system-ui, sans-serif; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function App() {
+            const [view, setView] = useState('DASHBOARD');
+            const [requests, setRequests] = useState([]);
+            const [loading, setLoading] = useState(false);
+
+            const fetchRequests = () => {
+                setLoading(true);
+                fetch('/api/requests')
+                    .then(res => res.json())
+                    .then(data => { setRequests(data); setLoading(false); })
+                    .catch(err => { console.error(err); setLoading(false); });
+            };
+
+            useEffect(() => {
+                fetchRequests();
+            }, []);
+
+            return (
+                <div className="min-h-screen flex flex-col">
+                    <nav className="bg-white border-b border-brand-200">
+                        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+                            <div className="font-bold text-lg text-brand-900 flex items-center gap-2">
+                                <div className="bg-brand-600 text-white px-3 py-1.5 rounded-lg shadow-sm">SmartPermit (Java Native)</div>
+                            </div>
+                            <div className="flex gap-6">
+                                <button onClick={() => setView('DASHBOARD')} className={`font-semibold transition-colors ${view==='DASHBOARD'?'text-brand-800 border-b-2 border-brand-600':'text-brand-500 hover:text-brand-700'}`}>Dashboard</button>
+                                <button onClick={() => setView('APPLY')} className={`font-semibold flex items-center gap-1 transition-colors ${view==='APPLY'?'text-brand-800 border-b-2 border-brand-600':'text-brand-500 hover:text-brand-700'}`}>Apply Leave</button>
+                                <button onClick={() => setView('REQUESTS')} className={`font-semibold flex items-center gap-1 transition-colors ${view==='REQUESTS'?'text-brand-800 border-b-2 border-brand-600':'text-brand-500 hover:text-brand-700'}`}>History Log</button>
+                            </div>
+                        </div>
+                    </nav>
+
+                    <main className="flex-1 max-w-5xl mx-auto w-full p-8 mt-4">
+                        {loading && <div className="text-center p-8 text-brand-600 font-bold animate-pulse">Communicating with Java Backend...</div>}
+                        {!loading && view === 'DASHBOARD' && <Dashboard requests={requests} />}
+                        {!loading && view === 'APPLY' && <ApplyForm onSuccess={() => {fetchRequests(); setView('REQUESTS');}} />}
+                        {!loading && view === 'REQUESTS' && <RequestList requests={requests} />}
+                    </main>
+                </div>
+            );
+        }
+
+        function Dashboard({ requests }) {
+            const approved = requests.filter(r => r.status === 'APPROVED').length;
+            const rejected = requests.filter(r => r.status === 'REJECTED').length;
+            
+            return (
+                <div>
+                    <h1 className="text-3xl font-bold mb-2">Live System Dashboard</h1>
+                    <p className="text-brand-500 mb-8">Data loaded directly from Java Backend DAO Engine.</p>
+                    
+                    <div className="grid grid-cols-3 gap-6">
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-brand-200">
+                            <h3 className="text-brand-500 text-sm font-bold uppercase tracking-wider">Total Evaluated</h3>
+                            <p className="text-4xl font-black mt-2 text-brand-900">{requests.length}</p>
+                        </div>
+                        <div className="bg-emerald-50 p-6 rounded-xl shadow-sm border border-emerald-200">
+                            <h3 className="text-emerald-600 text-sm font-bold uppercase tracking-wider">Auto-Approved</h3>
+                            <p className="text-4xl font-black mt-2 text-emerald-800">{approved}</p>
+                        </div>
+                        <div className="bg-red-50 p-6 rounded-xl shadow-sm border border-red-200">
+                            <h3 className="text-red-600 text-sm font-bold uppercase tracking-wider">Rejected</h3>
+                            <p className="text-4xl font-black mt-2 text-red-800">{rejected}</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function ApplyForm({ onSuccess }) {
+            const [form, setForm] = useState({ employeeId: '', employeeName: '', reason: '', requestDate: new Date().toISOString().split('T')[0], numberOfDays: 1, leaveType: 'Casual', pastLeaveCount: 0 });
+
+            const onSubmit = (e) => {
+                e.preventDefault();
+                fetch('/api/apply', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(form)
+                })
+                .then(res => res.json())
+                .then(data => {
+                    alert(`Java Decision Logic Result:\n\nStatus: ${data.status}\nReason: ${data.decisionReason}`);
+                    onSuccess();
+                });
+            };
+
+            return (
+                <form onSubmit={onSubmit} className="bg-white p-8 rounded-xl shadow-sm border border-brand-200 max-w-2xl mx-auto space-y-6">
+                    <div>
+                        <h2 className="text-2xl font-bold text-brand-900">Apply Leave Request</h2>
+                        <p className="text-brand-500 mt-1 text-sm">Java Decision Rules Engine will evaluate your input.</p>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-6">
+                        <div>
+                            <label className="block text-sm font-bold text-brand-800 mb-2">Employee ID</label>
+                            <input required type="number" className="border border-brand-200 bg-brand-50 p-2.5 rounded w-full outline-none focus:ring-2 focus:ring-brand-500" value={form.employeeId} onChange={e => setForm({...form, employeeId: e.target.value})} />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-brand-800 mb-2">Employee Name</label>
+                            <input required className="border border-brand-200 bg-brand-50 p-2.5 rounded w-full outline-none focus:ring-2 focus:ring-brand-500" value={form.employeeName} onChange={e => setForm({...form, employeeName: e.target.value})} />
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label className="block text-sm font-bold text-brand-800 mb-2">Reason</label>
+                        <textarea required rows="3" className="border border-brand-200 bg-brand-50 p-2.5 rounded w-full outline-none focus:ring-2 focus:ring-brand-500" value={form.reason} onChange={e => setForm({...form, reason: e.target.value})} />
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-6">
+                        <div>
+                            <label className="block text-sm font-bold text-brand-800 mb-2">Date (yyyy-MM-dd)</label>
+                            <input required type="date" className="border border-brand-200 bg-brand-50 p-2.5 rounded w-full outline-none focus:ring-2 focus:ring-brand-500" value={form.requestDate} onChange={e => setForm({...form, requestDate: e.target.value})} />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-brand-800 mb-2">Days Count</label>
+                            <input required type="number" className="border border-brand-200 bg-brand-50 p-2.5 rounded w-full outline-none focus:ring-2 focus:ring-brand-500" value={form.numberOfDays} onChange={e => setForm({...form, numberOfDays: e.target.value})} />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-brand-800 mb-2">Past Leaves</label>
+                            <input required type="number" className="border border-brand-200 bg-brand-50 p-2.5 rounded w-full outline-none focus:ring-2 focus:ring-brand-500" value={form.pastLeaveCount} onChange={e => setForm({...form, pastLeaveCount: e.target.value})} />
+                        </div>
+                    </div>
+                    
+                    <button className="bg-brand-800 hover:bg-brand-900 text-white p-3.5 rounded-lg font-bold w-full transition-colors shadow mt-4 text-lg">Send to Java Rule Engine</button>
+                </form>
+            );
+        }
+
+        function RequestList({ requests }) {
+            return (
+                <div className="bg-white rounded-xl shadow-sm border border-brand-200 overflow-hidden text-sm">
+                    <table className="w-full text-left">
+                        <thead className="bg-brand-100 text-brand-800 border-b border-brand-200">
+                            <tr>
+                                <th className="p-4 font-bold">Employee</th>
+                                <th className="p-4 font-bold">Reason</th>
+                                <th className="p-4 font-bold">Status</th>
+                                <th className="p-4 font-bold">Backend Decision Logic</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-brand-100">
+                            {requests.length === 0 && <tr><td colSpan="4" className="p-8 text-center text-brand-500">No requests in Java Database.</td></tr>}
+                            {requests.map(r => (
+                                <tr key={r.id} className="hover:bg-brand-50/50">
+                                    <td className="p-4"><b className="text-brand-900">{r.employeeName}</b><br/><span className="text-xs text-brand-500 font-semibold tracking-wider">ID: {r.employeeId}</span></td>
+                                    <td className="p-4 text-brand-800">{r.reason}</td>
+                                    <td className="p-4">
+                                        <span className={`px-2.5 py-1 rounded-full font-bold text-xs uppercase tracking-wider border ${r.status==='APPROVED'?'bg-emerald-100 text-emerald-800 border-emerald-200':r.status==='REJECTED'?'bg-red-100 text-red-800 border-red-200':'bg-amber-100 text-amber-800 border-amber-200'}`}>
+                                            {r.status}
+                                        </span>
+                                    </td>
+                                    <td className="p-4 text-xs italic text-brand-600 font-medium">{r.decisionReason}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
